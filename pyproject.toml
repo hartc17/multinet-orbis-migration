@@ -8,6 +8,7 @@ dependencies = [
     "shapely>=2.0",
     "pandas>=2.2",
     "pyogrio>=0.7",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]

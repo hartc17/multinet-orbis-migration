@@ -17,8 +17,9 @@ No real Multinet sample is in hand (commercially licensed, no public sample exis
 2. **Extract Orbis** (`extract.read_orbis_divisions`) — read an Orbis divisions extract for `state` or `county` (raises for `zip` — see Confirmed gap), assert required columns (`id`, `subtype`, `admin_level`, geometry) and CRS. *(Real, confirmed field names.)*
 3. **Match** (`match.match_to_orbis`) — for each Multinet boundary, compute its centroid (in an equal-area projection, not raw WGS84 degrees) and find the Orbis division of the matching `admin_level` whose polygon contains it. Produces one crosswalk row per Multinet boundary: `multinet_source_id`, `boundary_type`, `gers_id` (`None` if unmatched), `match_method` (`"spatial"` or `"unmatched"`), `source_vintage`.
 4. **Validate** (`validate.validate_geometry`, `validate.validate_crosswalk`) — flag invalid source geometry before matching, and flag unmatched Multinet boundaries or Orbis IDs claimed by more than one Multinet boundary after matching. No silent data loss: every Multinet record either gets a `gers_id` or shows up in the unmatched list.
+5. **Cross-check FIPS via Wikidata** (`fips_check.cross_check_fips`, optional) — a secondary, non-spatial confidence signal for matched county rows. Orbis's `division_area` polygons don't carry a FIPS code (see below), but Overture's separate `division` point-type record does carry a `wikidata` QID; that QID's Wikidata entity has a FIPS property (`P882`) that can be compared against Multinet's own `FIPS_CODE`. Result is `"agree"`, `"disagree"`, or `"unavailable"` (unmatched row, no QID on the Orbis side, or Wikidata has no FIPS claim) per row. This is a real network dependency (`migration.wikidata.fetch_fips_code`) — `wikidata.org`/`query.wikidata.org` are blocked by this development session's network policy, so `P882` and the response shape are **not independently verified against a live call yet**; confirm on first real run. The lookup function is injectable specifically so this can be swapped/mocked without depending on that being confirmed first.
 
-12 tests passing. Fixtures use **real geometry and real GERS IDs** for Texas (region), Hays County, and Travis County, read directly from Overture's open dataset (release `2026-06-17.0`) — plus El Paso County, present on the Multinet side but deliberately omitted from the Orbis fixture, to exercise the unmatched path.
+17 tests passing. Fixtures use **real geometry and real GERS IDs** for Texas (region), Hays County, and Travis County, read directly from Overture's open dataset (release `2026-06-17.0`) — plus El Paso County, present on the Multinet side but deliberately omitted from the Orbis fixture, to exercise the unmatched path. The county fixture also carries each county's real Wikidata QID (Hays: `Q27018`, Travis: `Q110426`), pulled from Overture's separate `division` point-type record.
 
 ## Confirmed gap: no zip/postal-code division in Overture (and likely Orbis)
 
@@ -30,6 +31,17 @@ Per decision: zip is dropped from the crosswalk's scope for now (`CROSSWALK_BOUN
 
 **To unblock zip**: confirm with an actual Orbis account/docs whether Orbis has a separate, non-Overture-divisions postal-boundary product, or whether zip-level crosswalking needs to happen through Census ZCTA / USPS data independently of Orbis, or is simply not supported.
 
+## Confirmed: no FIPS code on Orbis's division_area (corrects an earlier claim)
+
+A claim circulated that Orbis stores FIPS codes as a nested `local_type`/`local_code` property on divisions, with an example GERS ID of `ov-0g7d8-21x49`. Checked directly against real data:
+
+- The example GERS ID format is wrong — real ones are plain UUIDs (e.g. `a8853873-6cc9-42ea-a484-2df7eeb94d52`), confirmed earlier.
+- `local_type` does exist, but only on the separate `division` point-type (not `division_area`, the polygon type this pipeline matches against), and it is **not** a FIPS code — for Hays County it's `[('en', 'county')]`, a localized label for what kind of division this is (useful for e.g. "county" vs "parish" vs "borough" depending on locale), not an identifier.
+- There is no `local_code` field anywhere in either `division` or `division_area`'s real schema.
+- No field on either type holds a FIPS code. The closest things to an identifier are `wikidata` (a Wikidata QID, only on `division`) and `region` (e.g. `"US-TX"`).
+
+Net effect: there is no direct FIPS-based text-matching shortcut available on the Orbis side. The `wikidata` QID does enable an indirect, secondary cross-check (see `fips_check.cross_check_fips` above) via Wikidata's own FIPS property, but that's an extra external dependency, not something built into Orbis/Overture directly, and it's only ever a secondary signal — the primary match remains spatial.
+
 ## Milestones
 
 ### 1. Data acquisition — Multinet blocked, Orbis unblocked
@@ -40,8 +52,8 @@ Per decision: zip is dropped from the crosswalk's scope for now (`CROSSWALK_BOUN
 
 ### 2. Environment and project scaffolding — done
 
-- `pyproject.toml`, `.venv` (Python 3.12), with GeoPandas, Shapely, pandas, pyogrio, pytest, pytest-mock pinned (plus `overturemaps`/`pyarrow`, used one-off to pull real fixture data — not a runtime pipeline dependency yet).
-- Project layout: `src/migration/` (`schema.py`, `extract.py`, `match.py`, `validate.py`), `tests/`, `tests/fixtures/`.
+- `pyproject.toml`, `.venv` (Python 3.12), with GeoPandas, Shapely, pandas, pyogrio, requests, pytest, pytest-mock pinned (plus `overturemaps`/`pyarrow`, used one-off to pull real fixture data — not a runtime pipeline dependency).
+- Project layout: `src/migration/` (`schema.py`, `extract.py`, `match.py`, `validate.py`, `wikidata.py`, `fips_check.py`), `tests/`, `tests/fixtures/`.
 - Fixture geometry and Orbis IDs are real: Texas/Hays County/Travis County/El Paso County geometry and GERS IDs pulled directly from Overture's open, ODbL-licensed dataset. Multinet-side fixtures reuse this same real geometry relabeled under placeholder Multinet field names (`ID`, `NAME`, `FIPS_CODE`, `PARENT_ID`) since Multinet itself has no public sample.
 - **Once a real Multinet sample arrives**: replace `schema.py`'s placeholder Multinet field names with the real ones, and re-verify `extract.read_multinet_boundaries`'s assumptions against them. The Orbis side and its fixtures should not need to change.
 
@@ -52,8 +64,9 @@ Per decision: zip is dropped from the crosswalk's scope for now (`CROSSWALK_BOUN
 
 ### 4. Matching quality
 
-- Current match strategy is spatial-only (centroid-within-polygon, filtered to the correct `admin_level`). A real Multinet sample would let us add attribute-based cross-checks (FIPS equality) to upgrade `match_method` confidence beyond pure spatial containment.
+- Primary match strategy is spatial-only (centroid-within-polygon, filtered to the correct `admin_level`). Secondary cross-check available via `fips_check.cross_check_fips` (Wikidata QID → FIPS, compared against Multinet's `FIPS_CODE`) — see above. Not yet wired into `validate_crosswalk`'s pass/fail decision; currently a standalone annotation step, since it depends on an external network call this dev session can't verify live.
 - Handle edge cases once a real Multinet sample is available: a centroid landing exactly on a shared border, multi-polygon Multinet boundaries (Overture's own Texas geometry is a 88-part `MultiPolygon` with tiny islands/exclaves — Multinet's likely is too), and Orbis divisions that split or merge relative to their Multinet counterpart across vintages.
+- Once live: confirm Wikidata's `P882` property still holds the expected FIPS format on a real call, and decide how `fips_cross_check` results (`agree`/`disagree`/`unavailable`) should factor into the crosswalk's overall pass/fail.
 
 ### 5. Validation and reporting
 
