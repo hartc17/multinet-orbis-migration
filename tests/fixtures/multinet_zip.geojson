@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"ID": "Z1", "NAME": "78640", "ZIP_CODE": "78640", "PARENT_ID": "C1"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-98, 29], [-97.5, 29], [-97.5, 29.5], [-98, 29.5], [-98, 29]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"ID": "Z2", "NAME": "78704", "ZIP_CODE": "78704", "PARENT_ID": "C2"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-97, 29], [-96.5, 29], [-96.5, 29.5], [-97, 29.5], [-97, 29]]]
+      }
+    }
+  ]
+}

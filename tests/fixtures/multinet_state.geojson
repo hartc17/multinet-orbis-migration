@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"ID": "S1", "NAME": "Texas", "FIPS_CODE": "48"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-98, 29], [-96, 29], [-96, 31], [-98, 31], [-98, 29]]]
+      }
+    }
+  ]
+}

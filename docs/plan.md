@@ -6,23 +6,26 @@ Build a repeatable pipeline that converts state, county, and zip code boundary d
 
 ## Starting point
 
-Neither the Multinet source data/schema nor the Orbis target schema is in hand yet.
-The plan below starts with discovery and acquisition before any transform code is written, since the schema mapping (Milestone 3) cannot be designed against unknowns.
+Neither the Multinet source data/schema nor the Orbis target schema is in hand yet, and TomTom Multinet is commercially licensed — there is no public sample to download.
+Rather than block on procurement, Milestones 2 and 3 were bootstrapped against a **synthetic placeholder schema** (see `src/migration/schema.py`) so pipeline code, tests, and fixtures could be built now.
+Every placeholder field name must be revisited once a real Multinet sample and the real Orbis schema are obtained — treat the current schema as a stand-in shape, not a source of truth.
 
 ## Milestones
 
 ### 1. Data and schema acquisition
 
-- Obtain a TomTom Multinet sample extract covering at least one full state (so county and zip layers nest correctly inside it).
+- Obtain a TomTom Multinet sample extract covering at least one full state (so county and zip layers nest correctly inside it) — likely via TomTom directly or an authorized reseller (e.g. ADCi), since this is licensed data.
 - Obtain or write down the Orbis target schema: table/column names, geometry type and SRID, required vs. optional fields, and how Orbis expects boundary vintage/versioning to be represented.
 - Identify how Orbis ingests data today (direct DB load, file import, API) — this determines the shape of the pipeline's load step.
 - Confirm licensing/access terms for redistributing or storing Multinet data inside this repo's fixtures.
+- **Status: blocked on procurement.** Development proceeds against the placeholder schema below in the meantime.
 
-### 2. Environment and project scaffolding
+### 2. Environment and project scaffolding — done (placeholder schema)
 
-- Set up `pyproject.toml`, `.venv`, and pin GDAL, Shapely, GeoPandas, pandas, pytest per `CLAUDE.md` dependency conventions.
-- Establish the project layout: a package for extract/transform/load stages, `tests/`, `tests/fixtures/`, and `docs/`.
-- Get a minimal end-to-end smoke test running: read one Multinet boundary file, write it back out unchanged, confirmed by a test.
+- `pyproject.toml`, `.venv` (Python 3.12), with GeoPandas, Shapely, pandas, pyogrio, pytest, pytest-mock pinned.
+- Project layout: `src/migration/` (`schema.py`, `extract.py`, `transform.py`, `validate.py`), `tests/`, `tests/fixtures/`.
+- Synthetic fixtures for state/county/zip boundaries (nested Texas → Hays/Travis County → 78640/78704) exercise the extract → transform → validate path end to end; 7 tests passing.
+- **Once real Multinet/Orbis schemas arrive**: replace `schema.py`'s placeholder field names and fixtures with the real ones, and re-verify every assumption baked into `extract.py`/`transform.py` against them.
 
 ### 3. Schema discovery and mapping
 

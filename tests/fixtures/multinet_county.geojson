@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"ID": "C1", "NAME": "Hays County", "FIPS_CODE": "48209", "PARENT_ID": "S1"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-98, 29], [-97, 29], [-97, 30], [-98, 30], [-98, 29]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"ID": "C2", "NAME": "Travis County", "FIPS_CODE": "48453", "PARENT_ID": "S1"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-97, 29], [-96, 29], [-96, 30], [-97, 30], [-97, 29]]]
+      }
+    }
+  ]
+}

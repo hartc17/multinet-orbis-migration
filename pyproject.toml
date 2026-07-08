@@ -1,0 +1,27 @@
+[project]
+name = "multinet-orbis-migration"
+version = "0.1.0"
+description = "Migrates state, county, and zip code boundary data from TomTom Multinet to Orbis"
+requires-python = ">=3.12"
+dependencies = [
+    "geopandas>=0.14",
+    "shapely>=2.0",
+    "pandas>=2.2",
+    "pyogrio>=0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
