@@ -69,9 +69,40 @@ Every placeholder field name must be revisited once a real Multinet sample and t
 - `README.md`: setup, how to run the pipeline end to end, where fixtures/sample data live.
 - `docs/architecture.md`: data flow diagram (extract → transform → validate → load), the schema mapping tables from Milestone 3, and CRS handling decisions.
 
+## Research findings on Orbis (2026-07-08)
+
+TomTom's own developer portal (`developer.tomtom.com`) blocks automated fetches (403), so nothing below comes from reading TomTom's docs directly — only from public search snippets of TomTom/Overture pages, cross-checked against Overture Maps Foundation's own documentation.
+Confirmed facts:
+
+- Orbis is TomTom's own next-generation map platform, not a separate third-party system. It's built by fusing OpenStreetMap, Overture Maps, and TomTom's own data.
+- Orbis's administrative boundaries are structured on the **Overture Maps Foundation "divisions" schema** (`division` / `division_area` / `division_boundary` feature types), not a Multinet-style flat table.
+- Overture divisions use **GERS IDs** — persistent 128-bit identifiers assigned and maintained by Overture itself across data releases. This pipeline cannot mint GERS IDs; it can only receive them back from an Orbis lookup/match.
+- Overture divisions carry a numeric **`admin_level`** hierarchy field (0, 1, 2…), added in Overture's February 2026 release.
+- Orbis supports sample/bulk downloads in GeoParquet, PBF (protocol buffer / vector tiles), and Esri File Geodatabase (FGDB) formats.
+- TomTom publishes per-API Multinet-to-Orbis migration guides (Routing, Geocoding, Traffic, Navigation SDKs), confirming this is a recognized, documented transition many customers are going through — but those guides are about API parameter changes, not a boundary-data schema mapping.
+
+Explicitly **not confirmed** (treat as unverified even though plausible-sounding versions of these have circulated):
+
+- Exact Multinet table/column names (e.g. `MN_Admin_Area`, `ADMIN_ID`, `ORDER02`) — Multinet's real spec is commercially licensed; nothing public confirms these names.
+- Exact Overture/Orbis `subtype` enum values for county vs. zip/postal-code-equivalent divisions.
+- Whether Orbis offers granular regional bulk downloads (e.g. a single-state extract).
+- Whether US zip-equivalent divisions in Orbis follow ZCTA (Census) boundaries or postal delivery boundaries.
+
+`src/migration/schema.py` has been updated to reflect the confirmed facts (`gers_id`, `admin_level`, `multinet_source_id` for lineage since we don't generate GERS IDs ourselves) while keeping Multinet-side fields and the exact `admin_level` values per boundary type explicitly marked as placeholders.
+
+## Open architectural question
+
+Because Orbis is TomTom's own authoritative dataset (not a database this project writes into), "migrate Multinet data to Orbis" most likely means one of:
+
+1. **Re-source**: switch whatever internal/downstream system currently consumes Multinet-derived boundaries to instead consume the equivalent Orbis divisions data (via GeoParquet/FGDB download or vector tiles), keeping our own internal schema.
+2. **Crosswalk**: keep existing Multinet-derived records/IDs in place, and produce a mapping from each Multinet boundary to its corresponding Orbis GERS ID (via spatial + attribute matching), so downstream references can be updated without a full re-extract.
+
+The current pipeline code (`extract.py` → `transform.py` → `validate.py`) is written generically enough to fit either direction, but the **load stage** (Milestone 7) and the real shape of the "match" step depend on which of these it actually is. This needs to be resolved before Milestone 7 is built.
+
 ## Open questions to resolve during Milestone 1
 
-- Which Orbis ingestion path are we targeting (direct DB write, file-based import, API)?
+- Which of the two directions above is this project actually doing (re-source vs. crosswalk)?
+- Which Orbis ingestion/consumption path are we targeting (GeoParquet/FGDB bulk download, vector tiles, an API)?
 - Does Orbis require a specific SRID, or does it accept multiple?
-- How does Orbis want to represent zip codes — ZCTA (Census) boundaries or actual postal delivery zip boundaries? Multinet and Orbis may not agree on this by default.
-- What's the update cadence for Multinet releases, and does that dictate how "repeatable" the pipeline needs to be (fully automated vs. manually triggered per release)?
+- How does Orbis represent zip codes — ZCTA (Census) boundaries or actual postal delivery zip boundaries? Multinet and Orbis may not agree on this by default.
+- What's the update cadence for Multinet/Orbis releases, and does that dictate how "repeatable" the pipeline needs to be (fully automated vs. manually triggered per release)?

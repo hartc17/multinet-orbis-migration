@@ -12,11 +12,13 @@ def test_transform_boundaries_state_maps_to_orbis_schema():
     result = transform_boundaries(source, "state", source_vintage="2026-06")
 
     row = result.iloc[0]
-    assert row["orbis_id"] == "S1"
-    assert row["boundary_name"] == "Texas"
+    assert row["gers_id"] is None
+    assert row["multinet_source_id"] == "S1"
+    assert row["name"] == "Texas"
     assert row["boundary_type"] == "state"
+    assert row["admin_level"] == 1
     assert row["code"] == "48"
-    assert row["parent_orbis_id"] is None
+    assert row["parent_gers_id"] is None
     assert row["source_vintage"] == "2026-06"
 
 
@@ -26,4 +28,5 @@ def test_transform_boundaries_zip_uses_zip_code_as_code():
     result = transform_boundaries(source, "zip", source_vintage="2026-06")
 
     assert set(result["code"]) == {"78640", "78704"}
-    assert set(result["parent_orbis_id"]) == {"C1", "C2"}
+    assert set(result["multinet_source_id"]) == {"Z1", "Z2"}
+    assert (result["admin_level"] == 3).all()

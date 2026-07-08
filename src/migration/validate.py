@@ -22,7 +22,7 @@ def validate_boundaries(
     source_gdf: gpd.GeoDataFrame, transformed_gdf: gpd.GeoDataFrame
 ) -> ValidationReport:
     invalid_mask = ~transformed_gdf.geometry.is_valid
-    invalid_ids = transformed_gdf.loc[invalid_mask, "orbis_id"].tolist()
+    invalid_ids = transformed_gdf.loc[invalid_mask, "multinet_source_id"].tolist()
 
     return ValidationReport(
         source_count=len(source_gdf),
