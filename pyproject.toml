@@ -1,7 +1,7 @@
 [project]
 name = "multinet-orbis-migration"
 version = "0.1.0"
-description = "Migrates state, county, and zip code boundary data from TomTom Multinet to Orbis"
+description = "Crosswalks state and county boundary records from TomTom Multinet to TomTom Orbis GERS IDs"
 requires-python = ">=3.12"
 dependencies = [
     "geopandas>=0.14",

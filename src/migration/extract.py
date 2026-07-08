@@ -3,6 +3,7 @@ from pathlib import Path
 import geopandas as gpd
 
 from migration.schema import (
+    CROSSWALK_BOUNDARY_TYPES,
     MULTINET_CRS,
     MULTINET_REQUIRED_COLUMNS,
     ORBIS_CRS,
@@ -28,6 +29,13 @@ def read_multinet_boundaries(path: Path, boundary_type: BoundaryType) -> gpd.Geo
 
 
 def read_orbis_divisions(path: Path, boundary_type: BoundaryType) -> gpd.GeoDataFrame:
+    if boundary_type not in CROSSWALK_BOUNDARY_TYPES:
+        raise ValueError(
+            f"Orbis has no crosswalk support for boundary_type={boundary_type!r} "
+            f"(supported: {CROSSWALK_BOUNDARY_TYPES}; see docs/plan.md for the confirmed "
+            "gap in zip/postal-code coverage)"
+        )
+
     gdf = gpd.read_file(path)
 
     required = ORBIS_REQUIRED_COLUMNS[boundary_type]

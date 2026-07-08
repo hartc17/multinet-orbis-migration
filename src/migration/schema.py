@@ -14,27 +14,29 @@ MULTINET_REQUIRED_COLUMNS: dict[BoundaryType, list[str]] = {
 
 MULTINET_CRS = "EPSG:4326"
 
-# Orbis is built on the Overture Maps Foundation "divisions" schema (division/division_area/
-# division_boundary), identified by GERS IDs (stable 128-bit identifiers) and a numeric
-# admin_level hierarchy field (confirmed via Overture's public schema docs, 2026-07-08 research).
-# Overture assigns GERS IDs itself; this project is a crosswalk, not a load into Orbis, so we
-# only ever read gers_id back from an Orbis extract, never generate one.
-# The exact admin_level values and any code/postal fields are NOT yet confirmed against real
-# Orbis output and must be revisited once real Orbis data is obtained (see docs/plan.md).
+# Orbis is built on the Overture Maps Foundation "divisions" schema. These field names and
+# values are CONFIRMED against real Overture open data (release 2026-06-17.0,
+# theme=divisions, type=division_area, read directly from Overture's public S3 bucket since
+# Orbis's own docs are unreachable - see docs/plan.md). `id` is the GERS ID itself, formatted
+# as a UUID string, not a separately-named or differently-shaped field.
+#
+# CONFIRMED GAP: Overture's divisions theme has no zip/postal-code-equivalent boundary
+# anywhere in Texas (admin_level only goes 0=country, 1=region/state, 2=county; the only
+# subtypes present are country/region/county/locality/neighborhood/microhood/macrohood).
+# Zip is therefore excluded from CROSSWALK_BOUNDARY_TYPES until/unless a different Orbis
+# data source for postal boundaries is confirmed (see docs/plan.md).
+CROSSWALK_BOUNDARY_TYPES: tuple[BoundaryType, ...] = ("state", "county")
+
 ORBIS_REQUIRED_COLUMNS: dict[BoundaryType, list[str]] = {
-    "state": ["gers_id", "name", "admin_level", "geometry"],
-    "county": ["gers_id", "name", "admin_level", "geometry"],
-    "zip": ["gers_id", "name", "admin_level", "geometry"],
+    "state": ["id", "subtype", "admin_level", "geometry"],
+    "county": ["id", "subtype", "admin_level", "geometry"],
 }
 
 ORBIS_CRS = "EPSG:4326"
 
-# Placeholder until real Orbis divisions data confirms the actual admin_level values used
-# for state/county/zip in the US (see docs/plan.md).
 ADMIN_LEVEL_BY_BOUNDARY_TYPE: dict[BoundaryType, int] = {
     "state": 1,
     "county": 2,
-    "zip": 3,
 }
 
 CODE_COLUMN_BY_BOUNDARY_TYPE: dict[BoundaryType, str] = {

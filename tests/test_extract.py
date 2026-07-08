@@ -17,7 +17,7 @@ def test_read_multinet_boundaries_state_returns_expected_rows():
 def test_read_multinet_boundaries_county_returns_expected_rows():
     gdf = read_multinet_boundaries(FIXTURES / "multinet_county.geojson", "county")
 
-    assert len(gdf) == 2
+    assert len(gdf) == 3
     assert set(gdf["PARENT_ID"]) == {"S1"}
 
 
@@ -52,3 +52,8 @@ def test_read_orbis_divisions_missing_column_raises(tmp_path):
 
     with pytest.raises(ValueError, match="missing columns"):
         read_orbis_divisions(bad_file, "state")
+
+
+def test_read_orbis_divisions_zip_unsupported_raises():
+    with pytest.raises(ValueError, match="no crosswalk support"):
+        read_orbis_divisions(FIXTURES / "multinet_zip.geojson", "zip")

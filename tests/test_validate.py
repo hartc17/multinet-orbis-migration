@@ -13,28 +13,28 @@ def test_validate_geometry_all_valid_passes():
     report = validate_geometry(gdf, id_column="ID")
 
     assert report.passed
-    assert report.feature_count == 2
+    assert report.feature_count == 3
     assert report.invalid_ids == []
 
 
 def test_validate_crosswalk_fully_matched_passes():
+    multinet = read_multinet_boundaries(FIXTURES / "multinet_state.geojson", "state")
+    orbis = read_orbis_divisions(FIXTURES / "orbis_state.geojson", "state")
+    crosswalk = match_to_orbis(multinet, orbis, "state", source_vintage="2026-06")
+
+    report = validate_crosswalk(crosswalk)
+
+    assert report.passed
+    assert report.matched_count == 1
+    assert report.unmatched_count == 0
+
+
+def test_validate_crosswalk_unmatched_row_fails():
     multinet = read_multinet_boundaries(FIXTURES / "multinet_county.geojson", "county")
     orbis = read_orbis_divisions(FIXTURES / "orbis_county.geojson", "county")
     crosswalk = match_to_orbis(multinet, orbis, "county", source_vintage="2026-06")
 
     report = validate_crosswalk(crosswalk)
 
-    assert report.passed
-    assert report.matched_count == 2
-    assert report.unmatched_count == 0
-
-
-def test_validate_crosswalk_unmatched_row_fails():
-    multinet = read_multinet_boundaries(FIXTURES / "multinet_zip.geojson", "zip")
-    orbis = read_orbis_divisions(FIXTURES / "orbis_zip.geojson", "zip")
-    crosswalk = match_to_orbis(multinet, orbis, "zip", source_vintage="2026-06")
-
-    report = validate_crosswalk(crosswalk)
-
     assert not report.passed
-    assert report.unmatched_ids == ["Z3"]
+    assert report.unmatched_ids == ["C3"]
