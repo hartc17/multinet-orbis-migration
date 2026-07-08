@@ -24,8 +24,9 @@ Every placeholder field name must be revisited once a real Multinet sample and t
 
 - `pyproject.toml`, `.venv` (Python 3.12), with GeoPandas, Shapely, pandas, pyogrio, pytest, pytest-mock pinned.
 - Project layout: `src/migration/` (`schema.py`, `extract.py`, `transform.py`, `validate.py`), `tests/`, `tests/fixtures/`.
-- Synthetic fixtures for state/county/zip boundaries (nested Texas → Hays/Travis County → 78640/78704) exercise the extract → transform → validate path end to end; 7 tests passing.
-- **Once real Multinet/Orbis schemas arrive**: replace `schema.py`'s placeholder field names and fixtures with the real ones, and re-verify every assumption baked into `extract.py`/`transform.py` against them.
+- Fixtures for state/county/zip boundaries (Texas → Hays/Travis County → 78640/78704) exercise the extract → transform → validate path end to end; 7 tests passing.
+  Geometry is real, not synthetic: TomTom Multinet itself has no public sample (commercially licensed), so fixture geometry was sourced from free, public-domain US Census TIGER/Line-derived boundaries (via `PublicaMundi/MappingAPI` for the state polygon, `plotly/datasets` for county polygons, and `OpenDataDE/State-zip-code-GeoJSON` for ZCTA polygons — all themselves reformattings of public Census data, no added license restrictions) and relabeled under our placeholder Multinet field names (`ID`, `NAME`, `FIPS_CODE`/`ZIP_CODE`, `PARENT_ID`). This gives tests real topology (real coastlines/borders, real vertex density) instead of toy squares, while the *field names* remain placeholders pending a real Multinet sample.
+- **Once real Multinet/Orbis schemas arrive**: replace `schema.py`'s placeholder field names with the real ones, and re-verify every assumption baked into `extract.py`/`transform.py` against them. The fixture geometry itself can likely stay (it's real US boundary data), only the property/column names need to change.
 
 ### 3. Schema discovery and mapping
 
