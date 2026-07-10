@@ -17,6 +17,9 @@ dev = [
     "pytest-mock>=3.12",
 ]
 
+[project.scripts]
+multinet-orbis-crosswalk = "migration.cli:main"
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
