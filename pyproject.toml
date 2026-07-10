@@ -1,0 +1,31 @@
+[project]
+name = "multinet-orbis-migration"
+version = "0.1.0"
+description = "Crosswalks state and county boundary records from TomTom Multinet to TomTom Orbis GERS IDs"
+requires-python = ">=3.12"
+dependencies = [
+    "geopandas>=0.14",
+    "shapely>=2.0",
+    "pandas>=2.2",
+    "pyogrio>=0.7",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
+
+[project.scripts]
+multinet-orbis-crosswalk = "migration.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
